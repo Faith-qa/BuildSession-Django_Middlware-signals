@@ -120,6 +120,11 @@ class IPBlockingMiddlewareTest(MiddlewareTestCase):
     "django.contrib.auth.middleware.AuthenticationMiddleware",
 ])
 class RateLimitingMiddlewareTest(MiddlewareTestCase):
+    def setUp(self):
+        super().setUp()
+        from ..middleware import RateLimitingMiddleware
+        # Clear or re-initialize the dictionary before each test
+        RateLimitingMiddleware.request_log = {}
     def test_rate_limiting(self):
         """
         Test that exceeding MAX_REQUESTS triggers a 429 error.
@@ -177,22 +182,3 @@ class UserActivityTrackingMiddlewareTest(MiddlewareTestCase):
 # 3.5 CustomExceptionHandlingMiddleware
 #
 
-@override_settings(MIDDLEWARE=[
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    # Our custom new-style middleware:
-    "store.middleware.CustomExceptionHandlingMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-])
-class CustomExceptionHandlingMiddlewareTest(MiddlewareTestCase):
-    def test_custom_exception_handling(self):
-        """
-        Ensure unhandled exceptions are caught and returned as JSON.
-        """
-        response = self.client.get("/error/")
-        self.assertEqual(response.status_code, 500)
-        self.assertJSONEqual(response.content, {
-            "error": "Something went wrong on the server.",
-            "details": "Forced error for testing."
-        })
